@@ -1,10 +1,9 @@
 ---
 title: "Course Project"
 author: "EFon"
-
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #install.packages("tidyverse")
 ```
-
+The tidyverse packages will be used for most of this analysis. Install now or load from library.
 
 ```{r }
 library(tidyverse)
@@ -26,6 +25,9 @@ library(lattice)
 
 
 # Code for reading in the dataset and/or processing the data
+
+The website address is saved and we use code to download directly to working directory. File is in zip format so unzip is necessary.
+The data are loaded into R using the read.csv package.
 ```{r }
 
 
@@ -37,6 +39,8 @@ download.file(fileURL, destfile = "nikedata.zip")
 unzip("nikedata.zip")
 
 nike <- read.csv("activity.csv")
+
+# view(head(nike)) This code shows top chunk of data if required.
 ```
 
 
@@ -44,13 +48,16 @@ nike <- read.csv("activity.csv")
  
 ```{r }
 
-par(mfrow = c(1,1))
+par(mfrow = c(1,1)) # Set the appropriate margins for graphing
 
-nike[["date"]] <- as_date(nike[["date"]], ymd())
+nike[["date"]] <- as_date(nike[["date"]], ymd()) #convert date column to as.date format for easy processing.
 
 daynike <- nike %>% group_by(date) %>% summarise(Totsteps = sum(steps, na.rm = TRUE))
+ # Using the nike dataset, group by date then calculate the total number of steps for each day.
+
 
 hist(daynike$Totsteps,col = "red", xlab = "Total Steps", main = "Histogram")
+# A histogram of our results.
 ```
 
 
@@ -70,9 +77,9 @@ median(daynike$Totsteps, na.rm = TRUE)
 
 ````{r }
 
-meanSTEPS <- nike %>% group_by(date) %>% summarise(avg = mean(steps, na.rm = TRUE))
+meanSTEPS <- nike %>% group_by(date) %>% summarise(avg = mean(steps, na.rm = TRUE)) # Average number of steps
  
-qplot(data = meanSTEPS, x = date, y = avg, geom = "path", ylab = "Average Steps", xlab = " ")
+qplot(data = meanSTEPS, x = date, y = avg, geom = "path", ylab = "Average Steps", xlab = " ") 
 ```
 
 
@@ -85,9 +92,10 @@ qplot(data = meanSTEPS, x = date, y = avg, geom = "path", ylab = "Average Steps"
  # view(intnike)
  
  
- # max(intnike$avg, na.rm = TRUE) Here we find the max value first, then use to filter row that matches.
+ max(intnike$avg, na.rm = TRUE) #Here we find the max value first, then use it to filter row that matches.
  # 206.1698
- maxinterval <- intnike %>% filter(avg == max(intnike$avg, na.rm = TRUE))
+ 
+ maxinterval <- intnike %>% filter(avg == max(intnike$avg, na.rm = TRUE)) #filter rows that match max steps.
  
  view(maxinterval)
 ```
@@ -106,17 +114,22 @@ Devise a strategy for filling in all of the missing values in the dataset. The s
 Create a new dataset that is equal to the original dataset but with the missing data filled in (cleannike).
 Make a histogram of the total number of steps taken each day and calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-
+We compute the 5-minute interval means(Intvmean) and use those to replace missing values.
 ```{r}  
+
 Intvmean <- nike %>% group_by(interval) %>% summarise(meanSTEPS = mean(steps, na.rm = TRUE)) # group by interval and get the mean number of steps for each interval.
 
  
-cleannike <- nike %>% group_by(date, interval)
+cleannike <- nike %>% group_by(date, interval) 
   
 
  
 cleannike$steps[is.na(cleannike$steps)] <- Intvmean$meanSTEPS 
-# For any rows in cleannike that contain NA replace these with the mean number of steps for each interval.
+# For any rows in cleannike that contain NA, replace these with the mean number of steps for each interval.
+
+#We have obtained a new clean dataset without missing values. We confirm below, should have zero NAs.
+
+sum(is.na(cleannike))
 ```
 
  
@@ -130,6 +143,8 @@ hist(nikenew$Totalstp, col = "blue", xlab = "Total Steps", main = "Histogram")
 ```
 
 # Calculate and report the mean and median total number of steps taken per day.
+
+We note that these values do no differ much from our previous calculations of mean and median.
  
 ```{r} 
 
@@ -142,13 +157,16 @@ median(nikenew$Totalstp)
  
 # Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
  
+First, we must convert our dates to weekdays such as Monday, Tuesday, etc.
+Then we split them into two groups for the different types; Weekdays and Weekends.
+
 ```{r}
 nikeweeks <- cleannike %>% ungroup() %>% mutate(weekdays = weekdays(as_date(cleannike[["date"]])))
 
 
 nikewk_type <- nikeweeks %>% mutate(weektype = ifelse(nikeweeks$weekdays %in% c("Saturday", "Sunday"), "WkEnd", "WDay"))
  
-table(nikewk_type$weektype)
+table(nikewk_type$weektype) 
 ```
 
 
@@ -159,7 +177,7 @@ table(nikewk_type$weektype)
 
 cobo <- nikewk_type %>% group_by(interval, weektype) %>% summarise(menot = mean(steps))
  
-xyplot(menot ~ interval | weektype, data=cobo, type="l", layout=c(1,2))
+xyplot(menot ~ interval | weektype, data=cobo, type="l", ylab = "Avg Steps", layout=c(1,2))
 ```
 
  
